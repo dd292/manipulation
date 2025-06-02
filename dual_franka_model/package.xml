@@ -1,0 +1,14 @@
+<?xml version= "1.0"?>
+<package format="3">
+    <name>dual_franka_model</name>
+    <version>0.1.10</version>
+    <description>headless_Mujoco_sim</description>
+    <maintainer email="dakshdhingra93@gmail.com">Daksh Dhingra</maintainer>
+    <license>MIT</license>
+    <buildtool_depend>ament_cmake</buildtool_depend>
+    <depend>rclcpp</depend>
+    <depend>sensor_msgs</depend>
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
+</package>
