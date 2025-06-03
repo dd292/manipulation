@@ -1,3 +1,6 @@
+To build the docker 
+docker build -t dual_franka_sim:latest .
+
 To start the docker 
 
 docker run -it \
@@ -10,6 +13,10 @@ docker run -it \
   dual_franka_sim:latest
 
   docker run -it --rm dual_franka_sim:latest
+
+To remove an old container 
+
+docker rm dual_franka_sim_dev 
 
   To change the permission of the docker mounted directory 
 
