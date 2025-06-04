@@ -8,6 +8,6 @@ def generate_launch_description():
             package= 'dual_franka_model',
             executable = 'mujoco_node',
             name = 'mujoco_sim_node',
-            parameters = [{'model_path': 'mjcf/mjx_panda.xml'}]
+            parameters = [{'model_path': 'mjcf/mjx_panda_table.xml'}]
         )
     ])

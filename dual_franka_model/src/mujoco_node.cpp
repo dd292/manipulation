@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 #include <chrono>
 #include "ament_index_cpp/get_package_share_directory.hpp"
+#include <Eigen/Dense>
 
 using namespace std::chrono_literals;
 
@@ -89,9 +90,7 @@ class MujocoSimNode : public rclcpp::Node {
                 rclcpp::shutdown();
                 return;
             }
-    
-            // Step the simulation
-            mj_step(model_, data_);
+            
     
             // Publish joint states
             auto msg = sensor_msgs::msg::JointState();
@@ -110,6 +109,14 @@ class MujocoSimNode : public rclcpp::Node {
             mjr_render(viewport, &scene_, &context_);
             glfwSwapBuffers(window_);
             glfwPollEvents();
+            // Eigen::VectorXd desired_position;
+            // desired_position <<1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0; // Example desired position
+            for (int i = 0; i < model_->nu; ++i)
+                data_->ctrl[i] =1.0;
+            //std::cerr<<"Number of actuators: "<<model_->nu<<std::endl;
+    
+            // Step the simulation
+            mj_step(model_, data_);
         }
     
         mjModel* model_ = nullptr;

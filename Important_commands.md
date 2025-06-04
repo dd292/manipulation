@@ -1,7 +1,7 @@
 To build the docker 
 docker build -t dual_franka_sim:latest .
 
-To start the docker 
+To create a new container from the image dual_franka_sim:latest 
 
 docker run -it \
   --gpus all \
@@ -13,6 +13,13 @@ docker run -it \
   dual_franka_sim:latest
 
   docker run -it --rm dual_franka_sim:latest
+To Resume an exited container 
+
+docker start dual_franka_sim_dev
+
+To execute a running container 
+
+docker exec -it dual_franka_sim_dev bash
 
 To remove an old container 
 
