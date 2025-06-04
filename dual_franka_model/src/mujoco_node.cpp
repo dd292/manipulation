@@ -109,11 +109,13 @@ class MujocoSimNode : public rclcpp::Node {
             mjr_render(viewport, &scene_, &context_);
             glfwSwapBuffers(window_);
             glfwPollEvents();
-            // Eigen::VectorXd desired_position;
-            // desired_position <<1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0; // Example desired position
-            for (int i = 0; i < model_->nu; ++i)
-                data_->ctrl[i] =1.0;
-            //std::cerr<<"Number of actuators: "<<model_->nu<<std::endl;
+            
+            // for (int i = 0; i < model_->nu; ++i)
+            //     data_->ctrl[i] =1.0;
+            int banana_id = mj_name2id(model_, mjOBJ_BODY, "banana");
+            const mjtNum* banana_pos = data_->xpos + 3 * banana_id;
+            
+            
     
             // Step the simulation
             mj_step(model_, data_);
