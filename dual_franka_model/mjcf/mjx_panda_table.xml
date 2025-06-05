@@ -128,7 +128,6 @@
       <geom name="leg4" type="box" pos="0.35  0.55 -0.4"  size="0.02 0.02 0.4" rgba="0.3 0.2 0.1 1"/>
     </body>
     <body name="banana" pos="0.5 0.5 0.44" quat="0.707 0 0.707 0"> <!-- on table -->
-      <freejoint/>
       <geom name="banana_geom" type="mesh" mesh="banana_mesh" rgba="1 1 0 1" contype="1" conaffinity="1"/>
     </body>
     <body name="link0" childclass="panda">
