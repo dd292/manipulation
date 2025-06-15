@@ -19,8 +19,6 @@ bool Planner::is_collision_free( const Point3D & point)
     mj_forward(model_, data_);
     for (int i = 0; i < data_->ncon; ++i) {//iterate on detcted contacts
         const mjContact& contact = data_->contact[i];
-        std::cerr << "Collision detected between geom " << contact.geom1
-              << " and geom " << contact.geom2 << std::endl;
         if (contact.geom1 == mj_name2id(model_, mjOBJ_GEOM, "table_top") ||
             contact.geom2 == mj_name2id(model_, mjOBJ_GEOM, "table_top") ||
             contact.geom1 == mj_name2id(model_, mjOBJ_GEOM, "banana_geom") ||
