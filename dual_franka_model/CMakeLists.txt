@@ -17,7 +17,14 @@ link_directories(/usr/local/lib)
 #Include Eigen
 include_directories(${EIGEN3_INCLUDE_DIR})
 
-add_executable(mujoco_node src/mujoco_node.cpp)
+# Add include directory for custom headers
+include_directories(include)
+
+add_executable(mujoco_node 
+src/mujoco_node.cpp
+src/controller.cpp
+src/planner.cpp
+)
 ament_target_dependencies(mujoco_node rclcpp sensor_msgs ament_index_cpp Eigen3)
 target_link_libraries(mujoco_node mujoco glfw GL m)
 

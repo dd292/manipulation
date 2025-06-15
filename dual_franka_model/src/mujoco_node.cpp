@@ -8,6 +8,8 @@
 #include "ament_index_cpp/get_package_share_directory.hpp"
 #include <Eigen/Dense>
 #include <cmath>
+#include <controller.hpp>
+#include <planner.hpp>
 
 using namespace std::chrono_literals;
 
@@ -87,14 +89,7 @@ class MujocoSimNode : public rclcpp::Node {
         }
     
     private:
-        void step_simulation() {
-          
-            if (glfwWindowShouldClose(window_)) {
-                rclcpp::shutdown();
-                return;
-            }
-            
-            // Render the scene
+        void render_scene() {
             int width, height;
             glfwGetFramebufferSize(window_, &width, &height);
             mjrRect viewport = {0, 0, width, height};
@@ -102,7 +97,21 @@ class MujocoSimNode : public rclcpp::Node {
             mjr_render(viewport, &scene_, &context_);
             glfwSwapBuffers(window_);
             glfwPollEvents();
-
+        }
+        void step_simulation() {
+          
+            if (glfwWindowShouldClose(window_)) {
+                rclcpp::shutdown();
+                return;
+            }
+            
+            if (!sim_initialized_)
+            {
+                // Initialize the simulation
+                mj_resetData(model_, data_);
+                mj_step(model_, data_);
+                sim_initialized_ = true;
+            }
             int banana_id = mj_name2id(model_, mjOBJ_BODY, "banana");
             const mjtNum* banana_pos = data_->xpos + 3 * banana_id;
 
@@ -112,43 +121,49 @@ class MujocoSimNode : public rclcpp::Node {
            
            
             //COmpute IK to move gripper closer to banana
-            Eigen::Vector3d banana_pos_eigen(banana_pos[0], banana_pos[1], banana_pos[2]);
-            Eigen::Vector3d gripper_pos_eigen(gripper_pos[0], gripper_pos[1], gripper_pos[2]);
-            Eigen::Vector3d delta_pos = banana_pos_eigen - gripper_pos_eigen;
-
-            double threshold = 0.001;
-            int max_iterations = 100;
-            int iteration = 0;
-            if (!sim_initialized_)
-            {
-                // Initialize the simulation
-                mj_resetData(model_, data_);
-                mj_step(model_, data_);
-                sim_initialized_ = true;
+            Point3D start = {gripper_pos[0], gripper_pos[1], gripper_pos[2]};
+            Point3D goal = {banana_pos[0], banana_pos[1], banana_pos[2]};
+            Planner planner(0.05, 1000, model_, data_);
+            std::vector<Point3D> path = planner.rrt(start, goal);
+            if (path.empty()) {
+                RCLCPP_ERROR(this->get_logger(), "No path found to the target position");
+                return;
             }
-            while (delta_pos.norm()> threshold && iteration <max_iterations)
-            {
+            // Use IK to follow waypoints
+            Controller controller(model_, data_);
+            for (const auto& waypoint : path) {
+                Eigen::Vector3d target_pos(waypoint.x, waypoint.y, waypoint.z);
+                std::cerr << "Moving gripper to target position: " << target_pos.transpose() << std::endl;
+                controller.compute_ik(target_pos, gripper_id, 0.001, 100);
+                render_scene();
+            }
 
-                //compute the Jacobian
-                Eigen::MatrixXd jacobian(3, model_->nu);
-                mj_jac(model_, data_, jacobian.data(), nullptr, gripper_pos, gripper_id);
+            // double threshold = 0.001;
+            // int max_iterations = 100;
+            // int iteration = 0;
+            // while (delta_pos.norm()> threshold && iteration <max_iterations)
+            // {
+
+            //     //compute the Jacobian
+            //     Eigen::MatrixXd jacobian(3, model_->nu);
+            //     mj_jac(model_, data_, jacobian.data(), nullptr, gripper_pos, gripper_id);
 
                 
-                // Compute joint velocity using pseudo-inverse
-                Eigen::VectorXd joint_velocity = jacobian.completeOrthogonalDecomposition().solve(delta_pos);
+            //     // Compute joint velocity using pseudo-inverse
+            //     Eigen::VectorXd joint_velocity = jacobian.completeOrthogonalDecomposition().solve(delta_pos);
 
-                for (int i = 0; i < model_->nu; ++i){
-                    data_->ctrl[i]= data_->qpos[i]+ joint_velocity[i]* model_->opt.timestep; // Apply the joint velocity to the control input
-                }
+            //     for (int i = 0; i < model_->nu; ++i){
+            //         data_->ctrl[i]= data_->qpos[i]+ joint_velocity[i]* model_->opt.timestep; // Apply the joint velocity to the control input
+            //     }
     
-                // Step the simulation
-                mj_step(model_, data_);
-                std::cerr << "Simulation time: " << data_->time << std::endl;
+            //     // Step the simulation
+            //     mj_step(model_, data_);
+            //     std::cerr << "Simulation time: " << data_->time << std::endl;
         
-                gripper_pos_eigen = Eigen::Vector3d(data_->xpos[3 * gripper_id], data_->xpos[3 * gripper_id + 1], data_->xpos[3 * gripper_id + 2]);
-                delta_pos = banana_pos_eigen - gripper_pos_eigen;
-                iteration++;
-            }
+            //     gripper_pos_eigen = Eigen::Vector3d(data_->xpos[3 * gripper_id], data_->xpos[3 * gripper_id + 1], data_->xpos[3 * gripper_id + 2]);
+            //     delta_pos = banana_pos_eigen - gripper_pos_eigen;
+            //     iteration++;
+            // }
             
             // Publish joint states
             auto msg = sensor_msgs::msg::JointState();
